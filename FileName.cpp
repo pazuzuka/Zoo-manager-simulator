@@ -47,11 +47,51 @@ public:
     }
 };
 
+class Employee {
+public:
+    virtual void doWork() = 0;
+};
+
+class Keeper : public Employee {
+public:
+    void doWork() override {
+        cout << "Keeper is feeding animals.\n";
+    }
+};
+
+class Veterinarian : public Employee {
+public:
+    void doWork() override {
+        cout << "Veterinarian is treating animals.\n";
+    }
+};
+
+class Guide : public Employee {
+public:
+    void doWork() override {
+        cout << "Guide is conducting a tour.\n";
+    }
+};
 
 class Visitor {
 public:
     void interactWithAnimals(Animal* animal) {
         cout << "Visitor interacts with " << animal->name << ".\n";
+    }
+};
+
+class Tour {
+public:
+    vector<string> route;
+
+    void addLocation(string location) {
+        route.push_back(location);
+    }
+
+    void startTour() {
+        for (const auto& location : route) {
+            cout << "Visiting: " << location << endl;
+        }
     }
 };
 
@@ -71,27 +111,80 @@ public:
     }
 };
 
+class FinanceManager {
+private:
+    double income;
+    double expenses;
+
+public:
+    FinanceManager() : income(0), expenses(0) {}
+
+    void addIncome(double amount) {
+        income += amount;
+    }
+
+    void addExpense(double amount) {
+        expenses += amount;
+    }
+
+    double calculateProfit() {
+        return income - expenses;
+    }
+
+    double calculateExpense() { 
+        return expenses;
+    }
+};
+
 class Zoo {
 private:
     vector<Animal*> animals;
+    vector<Employee*> employees;
     vector<Visitor> visitors;
+    vector<Tour> tours;
     VisitorManager visitorManager;
+    FinanceManager financeManager;
 
 public:
     void addAnimal(Animal* animal) {
         animals.push_back(animal);
     }
 
+    void addEmployee(Employee* employee) {
+        employees.push_back(employee);
+    }
 
     void addVisitor(const Visitor& visitor) {
         visitors.push_back(visitor);
     }
 
-
+    void addTour(const Tour& tour) {
+        tours.push_back(tour);
+    }
 
     void feedAllAnimals() {
         for (auto animal : animals) {
             animal->feed();
+        }
+    }
+
+    void makeEmployeesWork() {
+        for (auto employee : employees) {
+            employee->doWork();
+        }
+    }
+
+    void interactWithAnimals() {
+        for (auto& visitor : visitors) {
+            for (auto animal : animals) {
+                visitor.interactWithAnimals(animal);
+            }
+        }
+    }
+
+    void conductTours() {
+        for (auto& tour : tours) {
+            tour.startTour();
         }
     }
 
@@ -103,11 +196,24 @@ public:
         visitorManager.displayVisitorCount();
     }
 
+    void addIncome(double amount) {
+        financeManager.addIncome(amount);
+    }
+
+    void addExpense(double amount) {
+        financeManager.addExpense(amount);
+    }
+
+    double calculateProfit() {
+        return financeManager.calculateProfit();
+    }
 
     void saveStateToFile(string filename) {
         ofstream file(filename);
         if (file.is_open()) {
-
+            file << "Income: " << financeManager.calculateProfit() + financeManager.calculateExpense() << endl;
+            file << "Expense: " << financeManager.calculateExpense() << endl;
+            file << "Profit: " << financeManager.calculateProfit() << endl;
             file.close();
             cout << "Zoo state saved to " << filename << endl;
         }
@@ -119,6 +225,10 @@ public:
     void loadStateFromFile(string filename) {
         ifstream file(filename);
         if (file.is_open()) {
+            string line;
+            while (getline(file, line)) {
+                cout << line << endl;
+            }
             file.close();
             cout << "Zoo state loaded from " << filename << endl;
         }
@@ -143,15 +253,93 @@ public:
         cout << "12. Exit\n";
     }
 
-
-    int main() {
-        Zoo zoo;
-
-        Lion lion;
-        Elephant elephant;
-        Bird bird;
-        zoo.addAnimal(&lion);
-        zoo.addAnimal(&elephant);
-        zoo.addAnimal(&bird);
+    void handleInput(int choice) {
+        switch (choice) {
+        case 1:
+            feedAllAnimals();
+            break;
+        case 2:
+            makeEmployeesWork();
+            break;
+        case 3:
+            interactWithAnimals();
+            break;
+        case 4:
+            conductTours();
+            break;
+        case 5:
+            trackVisitor();
+            break;
+        case 6:
+            displayVisitorCount();
+            break;
+        case 7: {
+            double amount;
+            cout << "Enter income amount: ";
+            cin >> amount;
+            addIncome(amount);
+            break;
+        }
+        case 8: {
+            double amount;
+            cout << "Enter expense amount: ";
+            cin >> amount;
+            addExpense(amount);
+            break;
+        }
+        case 9:
+            cout << "Profit: $" << calculateProfit() << endl;
+            break;
+        case 10:
+            saveStateToFile("zoo_state.txt");
+            break;
+        case 11:
+            loadStateFromFile("zoo_state.txt");
+            break;
+        case 12:
+            cout << "Exiting...\n";
+            break;
+        default:
+            cout << "Invalid choice\n";
+        }
     }
 };
+
+int main() {
+    Zoo zoo;
+
+    Lion lion;
+    Elephant elephant;
+    Bird bird;
+    zoo.addAnimal(&lion);
+    zoo.addAnimal(&elephant);
+    zoo.addAnimal(&bird);
+
+    Keeper keeper;
+    Veterinarian vet;
+    Guide guide;
+    zoo.addEmployee(&keeper);
+    zoo.addEmployee(&vet);
+    zoo.addEmployee(&guide);
+
+    Visitor visitor1, visitor2;
+    zoo.addVisitor(visitor1);
+    zoo.addVisitor(visitor2);
+
+    Tour tour1, tour2;
+    tour1.addLocation("Lion Enclosure");
+    tour1.addLocation("Elephant Habitat");
+    tour2.addLocation("Bird Aviary");
+    tour2.addLocation("Reptile House");
+    zoo.addTour(tour1);
+    zoo.addTour(tour2);
+
+    int choice;
+    do {
+        zoo.displayMenu();
+        cout << "Enter your choice: ";
+        cin >> choice;
+        zoo.handleInput(choice);
+    } while (choice != 12);
+
+}
